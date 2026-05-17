@@ -6,9 +6,12 @@ import UniformTypeIdentifiers
 final class ImageLibraryStore: ObservableObject {
     @Published private(set) var folderURL: URL?
     @Published private(set) var images: [ImageItem] = []
+    @Published var idImageMap: [String: ImageItem] = [:]
     @Published var selectedImageID: ImageItem.ID?
     @Published var searchText = ""
     @Published var scanError: String?
+    @Published var filteredFolder: URL?
+    @Published var filteredImages: [ImageItem] = []
     @Published var folderURLs: [URL] = []
     @Published var isScanning = false
     @Published private(set) var scanProgress: ScanProgress?
@@ -33,16 +36,7 @@ final class ImageLibraryStore: ObservableObject {
     }
 
     var selectedImage: ImageItem? {
-        images.first { $0.id == selectedImageID }
-    }
-
-    var filteredImages: [ImageItem] {
-        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            return images
-        }
-
-        return images.filter { $0.fileName.localizedCaseInsensitiveContains(trimmed) }
+        idImageMap[selectedImageID?.uuidString ?? ""]
     }
 
     var selectedIndex: Int? {
@@ -50,23 +44,38 @@ final class ImageLibraryStore: ObservableObject {
             return nil
         }
 
-        return images.firstIndex { $0.id == selectedImageID }
+        return filteredImages.firstIndex { $0.id == selectedImageID }
     }
 
     var canNavigateBackward: Bool {
-        guard let selectedIndex else {
+        guard let selectedImage = idImageMap[selectedImageID?.uuidString ?? ""] else {
             return false
         }
 
-        return selectedIndex > 0
+        return selectedImage.previousId != nil
     }
 
     var canNavigateForward: Bool {
-        guard let selectedIndex else {
+        guard let selectedImage = idImageMap[selectedImageID?.uuidString ?? ""] else {
             return false
         }
 
-        return selectedIndex < images.count - 1
+        return selectedImage.nextId != nil
+    }
+    
+    func updateFilteredImages() {
+        var result = images
+
+        if let folder = filteredFolder {
+            result = result.filter { $0.url.path.hasPrefix(folder.path) }
+        }
+
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            result = result.filter { $0.fileName.localizedCaseInsensitiveContains(trimmed) }
+        }
+
+        self.filteredImages = result
     }
 
     func chooseFolder() {
@@ -131,39 +140,40 @@ final class ImageLibraryStore: ObservableObject {
         resourceKeys: Set<URLResourceKey>,
         progress: @escaping @Sendable (_ scannedFileCount: Int, _ foundImageCount: Int) -> Void
     ) -> [URL] {
-        guard let enumerator = FileManager.default.enumerator(
-            at: folder,
-            includingPropertiesForKeys: Array(resourceKeys),
-            options: [.skipsHiddenFiles]
-        ) else {
-            return []
-        }
-
-        var urls: [URL] = []
+        var queue: [URL] = [folder]
+        var imageUrls: [URL] = []
         var scannedFileCount = 0
-        for case let url as URL in enumerator {
-            let values = try? url.resourceValues(forKeys: resourceKeys)
-            guard values?.isRegularFile == true else {
+
+        while !queue.isEmpty {
+            let current = queue.removeFirst()
+            guard let entries = try? FileManager.default.contentsOfDirectory(at: current, includingPropertiesForKeys: nil).filter({ !$0.lastPathComponent.hasPrefix(".") }) else {
                 continue
             }
 
-            scannedFileCount += 1
-            if Self._isSupported(url.pathExtension.lowercased(), contentType: values?.contentType) {
-                urls.append(url)
+            var subdirs: [URL] = []
+            for entry in entries {
+                let values = try? entry.resourceValues(forKeys: resourceKeys)
+                if entry.hasDirectoryPath {
+                    subdirs.append(entry)
+                } else if values?.isRegularFile == true {
+                    scannedFileCount += 1
+                    if Self._isSupported(entry.pathExtension.lowercased(), contentType: values?.contentType) {
+                        imageUrls.append(entry)
+                    }
+                    if scannedFileCount == 1 || scannedFileCount.isMultiple(of: 25) {
+                        progress(scannedFileCount, imageUrls.count)
+                    }
+                }
             }
 
-            if scannedFileCount == 1 || scannedFileCount.isMultiple(of: 25) {
-                progress(scannedFileCount, urls.count)
-            }
+            queue.append(contentsOf: subdirs.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending })
         }
 
         if scannedFileCount > 0 {
-            progress(scannedFileCount, urls.count)
+            progress(scannedFileCount, imageUrls.count)
         }
 
-        return urls.sorted {
-            $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending
-        }
+        return imageUrls
     }
 
     private func updateScanProgress(folder: URL, scannedFileCount: Int, foundImageCount: Int) {
@@ -192,11 +202,19 @@ final class ImageLibraryStore: ObservableObject {
             return
         }
 
-        self.images = items
+        var linked = items
+        for i in 0..<linked.count {
+            linked[i].previousId = (i > 0) ? linked[i - 1].id : nil
+            linked[i].nextId = (i < linked.count - 1) ? linked[i + 1].id : nil
+            self.idImageMap[linked[i].id.uuidString] = linked[i]
+        }
+
+        self.images = linked
+        self.filteredImages = images
         self.isScanning = false
         self.scanProgress = nil
         if self.selectedImageID == nil {
-            self.selectedImageID = items.first?.id
+            self.selectedImageID = linked.first?.id
         }
     }
 
@@ -204,20 +222,73 @@ final class ImageLibraryStore: ObservableObject {
         selectedImageID = item.id
     }
 
-    func selectPrevious() {
-        guard canNavigateBackward, let selectedIndex else {
-            return
+    func setFilteredFolder(_ url: URL?) {
+        filteredFolder = url
+        updateFilteredImages()
+        if !filteredImages.isEmpty {
+            selectedImageID = filteredImages[0].id
+        }
+    }
+
+    struct DirectoryNode {
+        let url: URL
+        let name: String
+        let children: [DirectoryNode]
+        let imageCount: Int
+    }
+
+    func buildDirectoryTree(for rootURL: URL) -> DirectoryNode {
+        let (subdirs, directImages) = collectDirectoriesAndImages(under: rootURL)
+        let children = subdirs.map { buildDirectoryTree(for: $0) }
+        return DirectoryNode(url: rootURL, name: rootURL.lastPathComponent, children: children, imageCount: directImages)
+    }
+
+    private func collectDirectoriesAndImages(under url: URL) -> (subdirs: [URL], imageCount: Int) {
+        var subdirs: [URL] = []
+        var imageCount = 0
+
+        do {
+            let contents = try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
+            for item in contents {
+                if item.hasDirectoryPath {
+                    subdirs.append(item)
+                } else if Self._isSupported(item.pathExtension.lowercased(), contentType: nil) {
+                    imageCount += 1
+                }
+            }
+        } catch {
+            return ([], 0)
         }
 
-        selectedImageID = images[selectedIndex - 1].id
+        return (subdirs.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }, imageCount)
+    }
+
+    func selectPrevious() {
+        guard canNavigateBackward else {
+            return
+        }
+        
+        if let current = idImageMap[selectedImageID!.uuidString] {
+            if current.previousId == nil {
+                return
+            }
+            selectedImageID = idImageMap[current.previousId!.uuidString]!.id
+        }
+
     }
 
     func selectNext() {
-        guard canNavigateForward, let selectedIndex else {
+        guard canNavigateForward else {
             return
         }
+        
+        if let current = idImageMap[selectedImageID!.uuidString] {
+            if current.nextId == nil {
+                return
+            }
+            selectedImageID = idImageMap[current.nextId!.uuidString]!.id
+        }
 
-        selectedImageID = images[selectedIndex + 1].id
     }
 
     private enum Keys {

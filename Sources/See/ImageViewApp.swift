@@ -17,7 +17,7 @@ struct SeeApp: App {
         Settings {
             SettingsView()
                 .environmentObject(settings)
-                .frame(width: 520)
+                .frame(width: 620)
         }
     }
 }

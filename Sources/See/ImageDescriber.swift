@@ -4,9 +4,11 @@ import SwiftUI
 @MainActor
 final class ImageDescriber {
     private let settings: LLMSettings
+    private let cache: ImageCache?
 
-    init(settings: LLMSettings) {
+    init(settings: LLMSettings, cache: ImageCache? = nil) {
         self.settings = settings
+        self.cache = cache
     }
 
     enum DescribeError: Swift.Error, LocalizedError {
@@ -32,37 +34,59 @@ final class ImageDescriber {
     typealias Error = DescribeError
 
     func describe(imageURL: URL, prompt: String? = nil) async throws -> String {
-        let imageData = try Data(contentsOf: imageURL)
+        // Check cache first
+        if let cached = cache?.description(for: imageURL.path) {
+            return cached
+        }
+
+        // Load image and convert to PNG to ensure compatibility with all APIs
+        guard let nsImage = NSImage(contentsOf: imageURL) else {
+            throw Error.unknown("Failed to load image from \(imageURL.path)")
+        }
+
+        guard let bitmap = nsImage.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            throw Error.unknown("Failed to convert image to bitmap")
+        }
+
+        let representation = NSBitmapImageRep(cgImage: bitmap)
+        let imageData = representation.representation(using: .png, properties: [:]) ?? nsImage.tiffRepresentation!
+
         let base64 = imageData.base64EncodedString()
-        let mimeType = mimeType(for: imageURL)
+        let mimeType = "image/png"
 
-        let defaultPrompt = """
-        Describe this image in detail. Include what objects are present, the scene, colors, composition, and any notable details.
-        Be concise but thorough. Respond in the same language as the image filename if it's in Chinese, otherwise use English.
-        """
+        let systemPrompt = "You are speaking as an AI assistant. Describe the image to me."
 
-        let systemPrompt = prompt ?? defaultPrompt
+        let userPrompt = prompt ?? settings.prompt
 
+        let result: String
         switch settings.provider {
         case .ollama:
-            return try await describeWithOllama(
+            result = try await describeWithOllama(
                 base64: base64,
                 mimeType: mimeType,
-                systemPrompt: systemPrompt
+                systemPrompt: systemPrompt,
+                userPrompt: userPrompt
             )
         case .openAI:
-            return try await describeWithOpenAI(
+            result = try await describeWithOpenAI(
                 base64: base64,
                 mimeType: mimeType,
-                systemPrompt: systemPrompt
+                systemPrompt: systemPrompt,
+                userPrompt: userPrompt
             )
         }
+
+        // Save to cache
+        cache?.saveDescription(result, for: imageURL.path)
+
+        return result
     }
 
     private func describeWithOllama(
         base64: String,
         mimeType: String,
-        systemPrompt: String
+        systemPrompt: String,
+        userPrompt: String
     ) async throws -> String {
         let url = URL(string: settings.ollamaBaseURL)!.appending(path: "api/chat")
 
@@ -75,7 +99,7 @@ final class ImageDescriber {
                 ] as [String: Any],
                 [
                     "role": "user",
-                    "content": "",
+                    "content": userPrompt,
                     "images": [base64]
                 ] as [String: Any]
             ],
@@ -86,6 +110,7 @@ final class ImageDescriber {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        request.timeoutInterval = 300
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -98,7 +123,8 @@ final class ImageDescriber {
         }
 
         guard httpResponse.statusCode == 200 else {
-            throw Error.invalidResponse
+            let errMsg = parseErrorMessage(from: data)
+            throw Error.unknown(errMsg ?? "Request failed with status \(httpResponse.statusCode)")
         }
 
         let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
@@ -114,13 +140,20 @@ final class ImageDescriber {
     private func describeWithOpenAI(
         base64: String,
         mimeType: String,
-        systemPrompt: String
+        systemPrompt: String,
+        userPrompt: String
     ) async throws -> String {
         guard !settings.openAIAPIKey.isEmpty else {
             throw Error.unauthorized
         }
 
-        let url = URL(string: "https://api.openai.com/v1/chat/completions")!
+        guard var baseURL = URL(string: settings.openAIBaseURL.trimmingCharacters(in: .whitespaces)) else {
+            throw Error.unknown("Invalid base URL. Check your settings.")
+        }
+        if !baseURL.absoluteString.hasSuffix("/v1") && !baseURL.absoluteString.hasSuffix("/v1/") {
+            baseURL = baseURL.appending(path: "/v1")
+        }
+        let url = baseURL.appending(path: "chat/completions")
 
         let body: [String: Any] = [
             "model": settings.openAIModel,
@@ -134,7 +167,7 @@ final class ImageDescriber {
                     "content": [
                         [
                             "type": "text",
-                            "text": "Please describe this image in detail."
+                            "text": userPrompt
                         ] as [String: Any],
                         [
                             "type": "image_url",
@@ -153,6 +186,7 @@ final class ImageDescriber {
         request.setValue("Bearer \(settings.openAIAPIKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        request.timeoutInterval = 300
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -165,10 +199,8 @@ final class ImageDescriber {
         }
 
         if httpResponse.statusCode != 200 {
-            let errorDict = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-            let errMsg = errorDict?["error"] as? [String: Any]
-            let msg = errMsg?["message"] as? String ?? "Request failed with status \(httpResponse.statusCode)"
-            throw Error.unknown(msg)
+            let errMsg = parseErrorMessage(from: data)
+            throw Error.unknown(errMsg ?? "Request failed with status \(httpResponse.statusCode)")
         }
 
         let result = try JSONSerialization.jsonObject(with: data) as? [String: Any]
@@ -181,6 +213,99 @@ final class ImageDescriber {
         }
 
         return content
+    }
+
+    private func parseErrorMessage(from data: Data) -> String? {
+        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        if let error = json?["error"] as? [String: Any] {
+            return error["message"] as? String ?? error["type"] as? String
+        }
+        if let message = json?["message"] as? String {
+            return message
+        }
+        if let detail = json?["detail"] as? String {
+            return detail
+        }
+        if let error = json?["error"] as? String {
+            return error
+        }
+        return nil
+    }
+
+    func explain(imageURL: URL, prompt: String? = nil) async throws -> String {
+        let cachedDescription = cache?.description(for: imageURL.path)
+        let cachedExplanation = cache?.explanation(for: imageURL.path)
+
+        if let cachedExplanation {
+            return cachedExplanation
+        }
+
+        guard let description = cachedDescription else {
+            let descriptionText = try await describe(imageURL: imageURL)
+            return try await describeExplanation(
+                imageURL: imageURL,
+                description: descriptionText,
+                prompt: prompt
+            )
+        }
+
+        return try await describeExplanation(
+            imageURL: imageURL,
+            description: description,
+            prompt: prompt
+        )
+    }
+
+    private func describeExplanation(
+        imageURL: URL,
+        description: String,
+        prompt: String?
+    ) async throws -> String {
+        guard let nsImage = NSImage(contentsOf: imageURL) else {
+            throw Error.unknown("Failed to load image from \(imageURL.path)")
+        }
+
+        guard let bitmap = nsImage.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            throw Error.unknown("Failed to convert image to bitmap")
+        }
+
+        let representation = NSBitmapImageRep(cgImage: bitmap)
+        let imageData = representation.representation(using: .png, properties: [:]) ?? nsImage.tiffRepresentation!
+
+        let base64 = imageData.base64EncodedString()
+        let mimeType = "image/png"
+
+        let systemPrompt = "You are speaking as an AI assistant. Explain the image to me."
+
+        let userPrompt = prompt ?? """
+        I already have a description of this image:
+        \(description)
+
+        Please explain this image in more detail. What is the context, mood, and story behind it?
+        Respond in the same language as the original description.
+        """
+
+        let result: String
+        switch settings.provider {
+        case .ollama:
+            result = try await describeWithOllama(
+                base64: base64,
+                mimeType: mimeType,
+                systemPrompt: systemPrompt,
+                userPrompt: userPrompt
+            )
+        case .openAI:
+            result = try await describeWithOpenAI(
+                base64: base64,
+                mimeType: mimeType,
+                systemPrompt: systemPrompt,
+                userPrompt: userPrompt
+            )
+        }
+
+        cache?.saveExplanation(result, for: imageURL.path)
+
+        return result
     }
 
     private func mimeType(for url: URL) -> String {

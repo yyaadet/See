@@ -6,7 +6,8 @@ struct ImageItem: Identifiable, Hashable {
     let url: URL
     let fileName: String
     let fileSize: Int64
-    let pixelSize: CGSize?
+    var previousId: UUID?
+    var nextId: UUID?
 
     init(url: URL) {
         self.url = url
@@ -14,12 +15,14 @@ struct ImageItem: Identifiable, Hashable {
 
         let values = try? url.resourceValues(forKeys: [.fileSizeKey])
         self.fileSize = Int64(values?.fileSize ?? 0)
+    }
 
+    var pixelSize: CGSize? {
+        // Lazy load: only compute when first accessed
         if let image = NSImage(contentsOf: url) {
-            self.pixelSize = image.pixelSize
-        } else {
-            self.pixelSize = nil
+            return image.pixelSize
         }
+        return nil
     }
 
     var displaySize: String {

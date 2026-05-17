@@ -1,0 +1,407 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		82714D012FB95A1200094C0C /* ImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82714D002FB95A1200094C0C /* ImageCache.swift */; };
+		82714D032FB95BCB00094C0C /* SQLite.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 82714D022FB95BCB00094C0C /* SQLite.xcframework */; };
+		82714D052FB9A0F500094C0C /* CMarkWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82714D042FB9A0F500094C0C /* CMarkWrapper.swift */; };
+		A10000000000000000000001 /* ImageViewApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* ImageViewApp.swift */; };
+		A10000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* ContentView.swift */; };
+		A10000000000000000000003 /* ImageLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* ImageLibraryStore.swift */; };
+		A10000000000000000000004 /* ImageDescriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* ImageDescriber.swift */; };
+		A10000000000000000000005 /* ImageItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* ImageItem.swift */; };
+		A10000000000000000000006 /* LLMSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* LLMSettings.swift */; };
+		A10000000000000000000007 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* SettingsView.swift */; };
+		A10000000000000000000008 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		82714D002FB95A1200094C0C /* ImageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCache.swift; sourceTree = "<group>"; };
+		82714D022FB95BCB00094C0C /* SQLite.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = SQLite.xcframework; path = Carthage/Build/SQLite.xcframework; sourceTree = "<group>"; };
+		82714D042FB9A0F500094C0C /* CMarkWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CMarkWrapper.swift; sourceTree = "<group>"; };
+		A20000000000000000000001 /* ImageViewApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageViewApp.swift; sourceTree = "<group>"; };
+		A20000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A20000000000000000000003 /* ImageLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageLibraryStore.swift; sourceTree = "<group>"; };
+		A20000000000000000000004 /* ImageDescriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDescriber.swift; sourceTree = "<group>"; };
+		A20000000000000000000005 /* ImageItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageItem.swift; sourceTree = "<group>"; };
+		A20000000000000000000006 /* LLMSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMSettings.swift; sourceTree = "<group>"; };
+		A20000000000000000000007 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A20000000000000000000008 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A30000000000000000000001 /* See.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = See.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A40000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				82714D032FB95BCB00094C0C /* SQLite.xcframework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A50000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A50000000000000000000002,
+			);
+			sourceTree = "<group>";
+		};
+		A50000000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				A50000000000000000000003,
+			);
+			sourceTree = "<group>";
+		};
+		A50000000000000000000003 = {
+			isa = PBXGroup;
+			children = (
+				A50000000000000000000004 /* Sources/See */,
+				A50000000000000000000005 /* Resources */,
+				A50000000000000000000006 /* Frameworks */,
+				A50000000000000000000007 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A50000000000000000000004 /* Sources/See */ = {
+			isa = PBXGroup;
+			children = (
+				82714D042FB9A0F500094C0C /* CMarkWrapper.swift */,
+				82714D002FB95A1200094C0C /* ImageCache.swift */,
+				A20000000000000000000001 /* ImageViewApp.swift */,
+				A20000000000000000000002 /* ContentView.swift */,
+				A20000000000000000000003 /* ImageLibraryStore.swift */,
+				A20000000000000000000004 /* ImageDescriber.swift */,
+				A20000000000000000000005 /* ImageItem.swift */,
+				A20000000000000000000006 /* LLMSettings.swift */,
+				A20000000000000000000007 /* SettingsView.swift */,
+			);
+			path = Sources/See;
+			sourceTree = "<group>";
+		};
+		A50000000000000000000005 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000008 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A50000000000000000000006 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				82714D022FB95BCB00094C0C /* SQLite.xcframework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		A50000000000000000000007 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A30000000000000000000001 /* See.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A60000000000000000000001 /* See */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A70000000000000000000001 /* Build configuration list for PBXNativeTarget "See" */;
+			buildPhases = (
+				A80000000000000000000001 /* Sources */,
+				A40000000000000000000001 /* Frameworks */,
+				A80000000000000000000002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = See;
+			productName = See;
+			productReference = A30000000000000000000001 /* See.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A90000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+			};
+			buildConfigurationList = A70000000000000000000002 /* Build configuration list for PBXProject "See" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A50000000000000000000001;
+			productRefGroup = A50000000000000000000007 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A60000000000000000000001 /* See */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A80000000000000000000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000008 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A80000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000001 /* ImageViewApp.swift in Sources */,
+				A10000000000000000000002 /* ContentView.swift in Sources */,
+				82714D012FB95A1200094C0C /* ImageCache.swift in Sources */,
+				82714D052FB9A0F500094C0C /* CMarkWrapper.swift in Sources */,
+				A10000000000000000000003 /* ImageLibraryStore.swift in Sources */,
+				A10000000000000000000004 /* ImageDescriber.swift in Sources */,
+				A10000000000000000000005 /* ImageItem.swift in Sources */,
+				A10000000000000000000006 /* LLMSettings.swift in Sources */,
+				A10000000000000000000007 /* SettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		B10000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_NS_ASSERTIONS = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"/opt/homebrew/Cellar/cmark-gfm/0.29.0.gfm.13/include",
+				);
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/homebrew/lib,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"/opt/homebrew/Cellar/cmark-gfm/0.29.0.gfm.13/lib",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MODE = YES;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lcmark-gfm",
+					"-lcmark-gfm-extensions",
+				);
+				PRODUCT_BRIDGING_HEADER = "See/See-Bridging-Header.h";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = NO;
+			};
+			name = Debug;
+		};
+		B10000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"/opt/homebrew/Cellar/cmark-gfm/0.29.0.gfm.13/include",
+				);
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/homebrew/lib,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"/opt/homebrew/Cellar/cmark-gfm/0.29.0.gfm.13/lib",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MODE = YES;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lcmark-gfm",
+					"-lcmark-gfm-extensions",
+				);
+				PRODUCT_BRIDGING_HEADER = "See/See-Bridging-Header.h";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		B10000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNPATH = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"/opt/homebrew/Cellar/cmark-gfm/0.29.0.gfm.13/include",
+					"$(PROJECT_DIR)/Modules",
+				);
+				INFOPLIST_FILE = See/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/homebrew/lib,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"/opt/homebrew/Cellar/cmark-gfm/0.29.0.gfm.13/lib",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lcmark-gfm",
+					"-lcmark-gfm-extensions",
+				);
+				PRODUCT_BRIDGING_HEADER = "See/See-Bridging-Header.h";
+				PRODUCT_BUNDLE_IDENTIFIER = com.local.See;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = NO;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_INCLUDE_PATHS = "$(inherited) $(PROJECT_DIR)/Modules";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		B10000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNPATH = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"/opt/homebrew/Cellar/cmark-gfm/0.29.0.gfm.13/include",
+					"$(PROJECT_DIR)/Modules",
+				);
+				INFOPLIST_FILE = See/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/homebrew/lib,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"/opt/homebrew/Cellar/cmark-gfm/0.29.0.gfm.13/lib",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lcmark-gfm",
+					"-lcmark-gfm-extensions",
+				);
+				PRODUCT_BRIDGING_HEADER = "See/See-Bridging-Header.h";
+				PRODUCT_BUNDLE_IDENTIFIER = com.local.See;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = NO;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_INCLUDE_PATHS = "$(inherited) $(PROJECT_DIR)/Modules";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A70000000000000000000001 /* Build configuration list for PBXNativeTarget "See" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B10000000000000000000003 /* Debug */,
+				B10000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A70000000000000000000002 /* Build configuration list for PBXProject "See" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B10000000000000000000001 /* Debug */,
+				B10000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A90000000000000000000001 /* Project object */;
+}
