@@ -12,6 +12,8 @@ struct ContentView: View {
     @State private var cropMode = false
     @State private var imageCache = ImageCache()
     @State private var descriptionFontSize: CGFloat = 15.0
+     @State private var descriptionVisible = true
+    @State private var explanationText: String?
 
     var body: some View {
         HStack(spacing: 0) {
@@ -86,8 +88,10 @@ struct ContentView: View {
             cropMode = false
             panOffset = .zero
             descriptionFontSize = 15.0
+            descriptionVisible = true
             if let selected = store.selectedImage {
                 descriptionText = imageCache.description(for: selected.url.path)
+                explanationText = imageCache.explanation(for: selected.url.path)
             }
         }
         .onChange(of: zoom) {
@@ -423,17 +427,17 @@ struct ContentView: View {
                 Image(systemName: "square.and.arrow.up")
             }
 
-            if store.selectedImage != nil, descriptionText != nil {
-                Button("Explain") {
-                    Task {
-                        await getExplanation()
-                    }
-                }
-                .disabled(describing)
-            } else if store.selectedImage != nil {
+            if store.selectedImage != nil {
                 Button("Describe") {
                     Task {
                         await getDescribe()
+                    }
+                }
+                .disabled(describing)
+
+                Button("Explain") {
+                    Task {
+                        await getExplanation()
                     }
                 }
                 .disabled(describing)
@@ -763,8 +767,11 @@ struct ContentView: View {
                         .fontWeight(.medium)
                         .foregroundColor(.primary)
                 } else {
+                    @State var isHovered = false
+
                     Button {
                         descriptionText = nil
+                        explanationText = nil
                         descriptionError = nil
                         Task {
                             await getDescribe()
@@ -772,46 +779,109 @@ struct ContentView: View {
                     } label: {
                         Image(systemName: "arrow.clockwise")
                     }
-                    .font(.caption2)
+                    .font(.body)
                     .help("Regenerate")
+                    .buttonStyle(.plain)
+                    .background(isHovered ? Color.white.opacity(0.15) : Color.clear)
+                    .cornerRadius(4)
+                    .onHover { hovering in
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            isHovered = hovering
+                        }
+                    }
+
+                    @State var isHoveredMinus = false
 
                     Button {
                         descriptionFontSize = max(8, descriptionFontSize - 1)
                     } label: {
                         Image(systemName: "minus.magnifyingglass")
                     }
-                    .font(.caption2)
+                    .font(.body)
                     .help("Decrease text size")
+                    .buttonStyle(.plain)
+                    .background(isHoveredMinus ? Color.white.opacity(0.15) : Color.clear)
+                    .cornerRadius(4)
+                    .onHover { hovering in
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            isHoveredMinus = hovering
+                        }
+                    }
 
                     Text("\(Int(descriptionFontSize))")
-                        .font(.caption2)
+                        .font(.body)
                         .foregroundColor(.secondary)
                         .fixedSize()
+
+                    @State var isHoveredPlus = false
 
                     Button {
                         descriptionFontSize = min(36, descriptionFontSize + 1)
                     } label: {
                         Image(systemName: "plus.magnifyingglass")
                     }
-                    .font(.caption2)
+                    .font(.body)
                     .help("Increase text size")
+                    .buttonStyle(.plain)
+                    .background(isHoveredPlus ? Color.white.opacity(0.15) : Color.clear)
+                    .cornerRadius(4)
+                    .onHover { hovering in
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            isHoveredPlus = hovering
+                        }
+                    }
+
+                    @State var isHoveredEye = false
+
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            descriptionVisible.toggle()
+                        }
+                    } label: {
+                        Image(systemName: descriptionVisible ? "eye.slash" : "eye")
+                    }
+                    .font(.body)
+                    .help(descriptionVisible ? "Hide description" : "Show description")
+                    .buttonStyle(.plain)
+                    .background(isHoveredEye ? Color.white.opacity(0.15) : Color.clear)
+                    .cornerRadius(4)
+                    .onHover { hovering in
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            isHoveredEye = hovering
+                        }
+                    }
 
                     Spacer()
                 }
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(Color.white.opacity(0.1))
+            .background(Color.white.opacity(0.5))
             .cornerRadius(8)
             .padding(.top, 8)
             .padding(.leading, 12)
-            .frame(maxWidth: 400)
+            .frame(maxWidth: 320)
 
             // Description text
-            if let text = descriptionText, !describing {
-                MarkdownText(text: text, fontSize: descriptionFontSize)
-                    .frame(maxWidth: 350, maxHeight: .infinity, alignment: .leading)
-                    .padding(.leading, 12)
+            if descriptionVisible {
+                if let text = descriptionText, !describing {
+                    MarkdownText(text: text, fontSize: descriptionFontSize, textColor: NSColor.labelColor)
+                        .frame(maxWidth: 350, maxHeight: .infinity, alignment: .leading)
+                        .padding(.leading, 12)
+                }
+                if let text = explanationText, !describing {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Explanation")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 12)
+                            .padding(.top, 8)
+                        MarkdownText(text: text, fontSize: descriptionFontSize, textColor: NSColor.systemPurple)
+                            .frame(maxWidth: 350, maxHeight: .infinity, alignment: .leading)
+                            .padding(.leading, 12)
+                    }
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -851,6 +921,7 @@ struct ContentView: View {
 
         if imageCache.hasDescription(for: selected.url.path) {
             descriptionText = imageCache.description(for: selected.url.path)
+            explanationText = imageCache.explanation(for: selected.url.path)
             return
         }
 
@@ -860,6 +931,7 @@ struct ContentView: View {
         do {
             let text = try await descript.describe(imageURL: selected.url)
             descriptionText = text
+            explanationText = nil
         } catch {
             descriptionError = error.localizedDescription
         }
@@ -875,9 +947,8 @@ struct ContentView: View {
         let descript = ImageDescriber(settings: settings, cache: imageCache)
         do {
             let explanation = try await descript.explain(imageURL: selected.url)
-            let cachedDescription = imageCache.description(for: selected.url.path) ?? ""
             await MainActor.run {
-                self.descriptionText = cachedDescription + "\n\n**Explanation:**\n" + explanation
+                self.explanationText = explanation
                 self.describing = false
             }
         } catch {
@@ -900,15 +971,18 @@ extension String {
 struct MarkdownText: View {
     let text: String
     let fontSize: CGFloat
+    let textColor: NSColor
 
     var body: some View {
-        MarkdownTextView(text: text, fontSize: fontSize)
+        MarkdownTextView(text: text, fontSize: fontSize, textColor: textColor)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
 private struct MarkdownTextView: NSViewRepresentable {
     let text: String
     let fontSize: CGFloat
+    let textColor: NSColor
 
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSScrollView()
@@ -920,10 +994,10 @@ private struct MarkdownTextView: NSViewRepresentable {
         let textView = NSTextView()
         textView.isEditable = false
         textView.isSelectable = true
-        textView.drawsBackground = true
+        textView.drawsBackground = false
         textView.isRichText = true
         textView.font = NSFont.systemFont(ofSize: fontSize)
-        textView.textColor = NSColor.labelColor
+        textView.textColor = textColor
         textView.textContainerInset = NSSize(width: 12, height: 12)
         textView.textContainer?.lineFragmentPadding = 0
         scrollView.documentView = textView
@@ -935,6 +1009,7 @@ private struct MarkdownTextView: NSViewRepresentable {
         let textView = scrollView.documentView as? NSTextView
         guard let textView else { return }
         textView.font = NSFont.systemFont(ofSize: fontSize)
+        textView.textColor = textColor
         let attr = renderMarkdown(text)
         textView.textStorage?.setAttributedString(attr)
     }
@@ -944,9 +1019,11 @@ private struct MarkdownTextView: NSViewRepresentable {
         guard let attr else { return NSAttributedString(string: text) }
         let result = NSMutableAttributedString(attributedString: attr)
         result.addAttribute(NSAttributedString.Key.font, value: NSFont.systemFont(ofSize: fontSize), range: NSRange(location: 0, length: result.length))
+        result.addAttribute(NSAttributedString.Key.foregroundColor, value: textColor, range: NSRange(location: 0, length: result.length))
         result.addAttribute(NSAttributedString.Key.backgroundColor, value: NSColor.white.withAlphaComponent(0.08), range: NSRange(location: 0, length: result.length))
         let paragraph = NSMutableParagraphStyle()
-        paragraph.lineSpacing = 2
+        paragraph.lineSpacing = 4
+        paragraph.paragraphSpacing = 12
         result.addAttribute(NSAttributedString.Key.paragraphStyle, value: paragraph, range: NSRange(location: 0, length: result.length))
         return result
     }
