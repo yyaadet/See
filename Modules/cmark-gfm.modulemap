@@ -1,0 +1,6 @@
+framework module cmark_gfm {
+  umbrella header "cmark-gfm-umbrella.h"
+  link "cmark-gfm"
+  link "cmark-gfm-extensions"
+  export *
+}
