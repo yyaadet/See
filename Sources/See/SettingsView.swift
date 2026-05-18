@@ -5,113 +5,119 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        Form {
-            Section("LLM Provider") {
-                Picker("Provider", selection: $settings.provider) {
-                    ForEach(LLMProvider.allCases) { provider in
-                        Text(provider.rawValue).tag(provider)
+        NavigationStack {
+            Form {
+                // Provider selection
+                Section("Provider") {
+                    Picker("Type", selection: $settings.provider) {
+                        Label("Ollama (Local)", systemImage: "cpu")
+                            .tag(LLMProvider.ollama)
+                        Label("OpenAI (Cloud)", systemImage: "cloud")
+                            .tag(LLMProvider.openAI)
                     }
+                    .pickerStyle(.segmented)
                 }
-                .pickerStyle(.radioGroup)
-            }
 
-            if settings.provider == .ollama {
-                Section("Ollama Settings") {
-                    LabeledContent("Base URL") {
-                        TextField("http://localhost:11434", text: $settings.ollamaBaseURL)
-                            .disableAutocorrection(true)
-                    }
-
-                    HStack {
-                        if !settings.ollamaModelList.isEmpty {
-                            Picker("Model", selection: $settings.ollamaModel) {
-                                ForEach(settings.ollamaModelList, id: \.self) { model in
-                                    Text(model).tag(model)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                        } else {
-                            TextField("Model name", text: $settings.ollamaModel)
+                // Ollama section
+                if settings.provider == .ollama {
+                    Section("Ollama") {
+                        LabeledContent("URL") {
+                            TextField("http://localhost:11434", text: $settings.ollamaBaseURL)
                                 .disableAutocorrection(true)
-                                .italic()
-                                .foregroundColor(.secondary)
                         }
 
-                        Button {
-                            Task {
-                                await settings.fetchOllamaModels()
-                            }
-                        } label: {
-                            Image(systemName: settings.isFetchingModels ? "arrow.2.circle" : "arrow.clockwise.circle")
-                        }
-                        .disabled(settings.isFetchingModels)
-                    }
-                }
-            } else {
-                Section("OpenAI Settings") {
-                    LabeledContent("Base URL") {
-                        TextField("https://api.openai.com/v1", text: $settings.openAIBaseURL)
-                            .disableAutocorrection(true)
-                    }
-
-                    LabeledContent("API Key") {
-                        SecureField("sk-...", text: $settings.openAIAPIKey)
-                    }
-
-                    HStack {
-                        if !settings.openAIModelList.isEmpty {
-                            Picker("Model", selection: $settings.openAIModel) {
-                                ForEach(settings.openAIModelList, id: \.self) { model in
-                                    Text(model).tag(model)
+                        HStack(spacing: 8) {
+                            if !settings.ollamaModelList.isEmpty {
+                                Picker("Model", selection: $settings.ollamaModel) {
+                                    ForEach(settings.ollamaModelList, id: \.self) { model in
+                                        Text(model).tag(model)
+                                    }
                                 }
+                                .pickerStyle(.menu)
+                            } else {
+                                TextField("Enter model name", text: $settings.ollamaModel)
+                                    .disableAutocorrection(true)
+                                    .foregroundColor(.secondary)
                             }
-                            .pickerStyle(.menu)
-                        } else {
-                            TextField("Model name", text: $settings.openAIModel)
+
+                            Button {
+                                Task { await settings.fetchOllamaModels() }
+                            } label: {
+                                Image(systemName: settings.isFetchingModels ? "arrow.clockwise.circle.fill" : "arrow.clockwise.circle")
+                                    .imageScale(.large)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(settings.isFetchingModels)
+                            .frame(width: 32, height: 32)
+                            .background(Color.blue.opacity(0.1))
+                            .clipShape(Circle())
+                        }
+                    }
+                } else {
+                    Section("OpenAI") {
+                        LabeledContent("Base URL") {
+                            TextField("https://api.openai.com/v1", text: $settings.openAIBaseURL)
                                 .disableAutocorrection(true)
-                                .italic()
-                                .foregroundColor(.secondary)
                         }
 
-                        Button {
-                            Task {
-                                await settings.fetchOpenAIModels()
-                            }
-                        } label: {
-                            Image(systemName: settings.isFetchingModels ? "arrow.2.circle" : "arrow.clockwise.circle")
+                        LabeledContent("API Key") {
+                            SecureField("sk-...", text: $settings.openAIAPIKey)
                         }
-                        .disabled(settings.isFetchingModels)
+
+                        HStack(spacing: 8) {
+                            if !settings.openAIModelList.isEmpty {
+                                Picker("Model", selection: $settings.openAIModel) {
+                                    ForEach(settings.openAIModelList, id: \.self) { model in
+                                        Text(model).tag(model)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                            } else {
+                                TextField("Enter model name", text: $settings.openAIModel)
+                                    .disableAutocorrection(true)
+                                    .foregroundColor(.secondary)
+                            }
+
+                            Button {
+                                Task { await settings.fetchOpenAIModels() }
+                            } label: {
+                                Image(systemName: settings.isFetchingModels ? "arrow.clockwise.circle.fill" : "arrow.clockwise.circle")
+                                    .imageScale(.large)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(settings.isFetchingModels)
+                            .frame(width: 32, height: 32)
+                            .background(Color.blue.opacity(0.1))
+                            .clipShape(Circle())
+                        }
                     }
                 }
-            }
 
-            Section("Prompt") {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Custom prompt for image description. Leave empty to use the default prompt.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                // Prompt section
+                Section("Prompt") {
                     TextEditor(text: $settings.prompt)
-                        .font(.caption)
-                        .frame(height: 100)
+                        .font(.system(size: 13, design: .monospaced))
+                        .lineSpacing(3)
+                        .frame(height: 140)
+                        .padding(4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(NSColor.controlBackgroundColor))
+                        )
                 }
             }
-        }
-        .navigationTitle("Settings")
-        .frame(width: 460, height: 320)
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Done") {
-                    dismiss()
+            .formStyle(.grouped)
+            .navigationTitle("Settings")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        UserDefaults.standard.set(settings.prompt, forKey: "llm.prompt")
+                        dismiss()
+                    }
+                    .keyboardShortcut(.cancelAction)
                 }
-                .keyboardShortcut(.cancelAction)
             }
-        }
-        .task(id: settings.provider) {
-            if settings.provider == .ollama {
-                await settings.fetchOllamaModels()
-            } else {
-                await settings.fetchOpenAIModels()
-            }
+            .frame(width: 480, height: 400)
         }
     }
 }
