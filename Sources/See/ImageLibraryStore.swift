@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import Foundation
 import UniformTypeIdentifiers
 
@@ -16,13 +17,29 @@ final class ImageLibraryStore: ObservableObject {
     @Published var isScanning = false
     @Published private(set) var scanProgress: ScanProgress?
 
+    private var cancellables: [AnyCancellable] = []
+    private var pendingInitialScans = 0
+    private var initialScansComplete = false
+    private var storedImageID: ImageItem.ID?
     private let supportedExtensions = Set(["jpg", "jpeg", "png", "gif", "heic", "heif", "tif", "tiff", "bmp", "webp"])
 
     init() {
+        // Step 1: fetch stored selected image ID
+        self.storedImageID = loadSelectedImageID()
+
+        // Step 2: initialize other data
         loadFolders()
+        self.pendingInitialScans = folderURLs.count
         for url in folderURLs {
             scan(folder: url)
         }
+        
+        let cancellable = $selectedImageID
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.saveSelectedImageID()
+            }
+        cancellables.append(cancellable)
     }
 
     private func loadFolders() {
@@ -33,6 +50,19 @@ final class ImageLibraryStore: ObservableObject {
 
     private func saveFolders() {
         UserDefaults.standard.set(folderURLs.map { $0.absoluteString }, forKey: Keys.folderURLs)
+    }
+
+    private func loadSelectedImageID() -> ImageItem.ID? {
+        if let uuidString = UserDefaults.standard.string(forKey: Keys.selectedImageID) {
+            return UUID(uuidString: uuidString)
+        }
+        return nil
+    }
+
+    private func saveSelectedImageID() {
+        if let id = selectedImageID {
+            UserDefaults.standard.set(id.uuidString, forKey: Keys.selectedImageID)
+        }
     }
 
     var selectedImage: ImageItem? {
@@ -209,12 +239,29 @@ final class ImageLibraryStore: ObservableObject {
             self.idImageMap[linked[i].id.uuidString] = linked[i]
         }
 
-        self.images = linked
-        self.filteredImages = images
+        self.images.append(contentsOf: linked)
+        self.updateFilteredImages()
         self.isScanning = false
         self.scanProgress = nil
-        if self.selectedImageID == nil {
-            self.selectedImageID = linked.first?.id
+
+        // Validate selection after each scan
+        self.pendingInitialScans -= 1
+        self.validateSelection()
+    }
+
+    private func validateSelection() {
+        if self.pendingInitialScans > 0 {
+            return
+        }
+
+        guard !initialScansComplete else { return }
+        initialScansComplete = true
+
+        // Step 3: if stored selection exists and is valid, use it
+        if let stored = storedImageID, idImageMap[stored.uuidString] != nil {
+            selectedImageID = stored
+        } else if let first = images.first?.id {
+            selectedImageID = first
         }
     }
 
@@ -293,6 +340,7 @@ final class ImageLibraryStore: ObservableObject {
 
     private enum Keys {
         static let folderURLs = "see.folderURLs"
+        static let selectedImageID = "see.selectedImageID"
     }
 }
 

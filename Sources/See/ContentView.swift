@@ -563,7 +563,7 @@ struct ContentView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task(id: item.id) {
-            loadedImage = NSImage(contentsOf: item.url)
+            loadedImage = await Task.detached { NSImage(contentsOf: item.url) }.value
         }
     }
 
